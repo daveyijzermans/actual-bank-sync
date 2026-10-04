@@ -1,0 +1,22 @@
+{
+  "name": "actual-bank-sync",
+  "version": "1.0.0",
+  "description": "Scheduled Actual Budget bank sync with its status in Home Assistant over MQTT discovery",
+  "license": "MIT",
+  "author": "Davey IJzermans",
+  "main": "src/main.js",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node src/main.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@actual-app/api": "26.10.0",
+    "mqtt": "^5.16.0"
+  },
+  "allowScripts": {
+    "better-sqlite3": true
+  }
+}

@@ -1,0 +1,20 @@
+services:
+  actual-bank-sync:
+    build: .
+    image: actual-bank-sync:latest
+    container_name: actual-bank-sync
+    restart: unless-stopped
+    environment:
+      TZ: ${TZ:-UTC}
+      ACTUAL_SERVER_URL: ${ACTUAL_SERVER_URL}
+      ACTUAL_PASSWORD: ${ACTUAL_PASSWORD}
+      ACTUAL_BUDGET_ID: ${ACTUAL_BUDGET_ID}
+      SYNC_AT: ${SYNC_AT:-06:00}
+      MQTT_URL: ${MQTT_URL}
+      MQTT_USERNAME: ${MQTT_USERNAME}
+      MQTT_PASSWORD: ${MQTT_PASSWORD}
+    volumes:
+      - data:/data
+
+volumes:
+  data:
