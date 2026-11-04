@@ -1,11 +1,11 @@
 # actual-bank-sync
 
 Runs the bank sync of a self-hosted [Actual Budget](https://actualbudget.org) on a schedule and reports
-each run to Home Assistant over MQTT discovery.
+each run on its own MQTT topics.
 
 ## What it does
 
-- At each `SYNC_AT` time, and whenever the `Sync now` button is pressed, it downloads the budget and runs
+- At each `SYNC_AT` time, and on each sync-now command, it downloads the budget and runs
   the bank sync for every open account, retrying a failing account before giving up on it. Accounts
   without a bank link are skipped by Actual itself.
 - Each run happens in a child process with a time limit. The Actual engine holds the whole budget in
@@ -15,20 +15,15 @@ each run to Home Assistant over MQTT discovery.
   Before each run the service reads the server's version and installs that API release into the data
   dir once, so an upgraded server needs no new image. `ACTUAL_API_VERSION` pins one instead.
 
-## Entities
+## Topics
 
-One device, `Actual Bank Sync` unless `DEVICE_NAME` says otherwise; the name sets the ids.
+Under `actual-bank-sync/<slug>`, the slug from `DEVICE_NAME` (`Actual Bank Sync` by default):
 
-| Entity | Meaning |
+| Topic | |
 |---|---|
-| `sensor …_status` | `idle`, `running`, `success`, `partial` (some accounts failed) or `error`; the attributes list each account's result, the error, the API and server versions and the run time |
-| `binary_sensor …_problem` | On when the last run was not a full success |
-| `sensor …_last_sync` | When the last fully successful run finished |
-| `sensor …_next_sync` | The next scheduled run |
-| `button …_sync_now` | Starts a run |
-
-The state is retained on `actual-bank-sync/<slug>/state`, so a restart keeps the last outcome.
-`actual-bank-sync/<slug>/availability` is the last will.
+| `state` | Retained JSON, so a restart keeps the last outcome: `status` (`idle`, `running`, `success`, `partial` when some accounts failed, or `error`), `problem` (`ON` when the last run was not a full success), `last_run`, `last_success`, `next_run`, and `attrs` with each account's result, the error, the API and server versions and the run time |
+| `availability` | `online`, or `offline` as the last will |
+| `sync_now/press` | Any message starts a run |
 
 ## Configuration
 
@@ -47,7 +42,6 @@ The state is retained on `actual-bank-sync/<slug>/state`, so a restart keeps the
 | `MQTT_USERNAME`, `MQTT_PASSWORD` | | |
 | `DEVICE_NAME` | `Actual Bank Sync` | |
 | `MQTT_PREFIX` | `actual-bank-sync/<slug>` | |
-| `DISCOVERY_PREFIX` | `homeassistant` | |
 | `DATA_DIR` | `/data` | Budget cache and installed API releases |
 
 ## Running

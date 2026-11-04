@@ -6,7 +6,7 @@ const mqtt = require('mqtt');
 
 const { ensureApi } = require('./api-version');
 const { parseTimes, nextRun } = require('./schedule');
-const { slugify, topics, deviceConfig } = require('./discovery');
+const { slugify, topics } = require('./topics');
 
 const log = (...args) => console.log(new Date().toISOString(), ...args);
 
@@ -36,7 +36,6 @@ function readConfig(env = process.env) {
     mqttPassword: env.MQTT_PASSWORD || undefined,
     name,
     prefix: env.MQTT_PREFIX || `actual-bank-sync/${slugify(name)}`,
-    discoveryPrefix: env.DISCOVERY_PREFIX || 'homeassistant',
   };
 }
 
@@ -96,12 +95,6 @@ class Service {
   publishState() {
     this.state.next_run = nextRun(this.cfg.syncAt)?.toISOString() ?? null;
     if (this.client?.connected) this.client.publish(this.t.state, JSON.stringify(this.state), { qos: 1, retain: true });
-  }
-
-  publishDiscovery() {
-    const cfg = deviceConfig({ name: this.cfg.name, prefix: this.cfg.prefix, serverURL: this.cfg.serverURL });
-    const topic = `${this.cfg.discoveryPrefix}/device/actual_bank_sync_${slugify(this.cfg.name)}/config`;
-    this.client.publish(topic, JSON.stringify(cfg), { qos: 1, retain: true });
   }
 
   // Keep the last run's outcome across restarts from the retained state.
@@ -173,8 +166,7 @@ class Service {
     });
     this.client.on('connect', () => {
       log(`connected to ${cfg.mqttURL}`);
-      this.client.subscribe([`${cfg.discoveryPrefix}/status`, t.syncNow, t.state]);
-      this.publishDiscovery();
+      this.client.subscribe([t.syncNow, t.state]);
       this.client.publish(t.availability, 'online', { qos: 1, retain: true });
       // Give the retained state a moment to arrive before publishing over it.
       setTimeout(() => {
@@ -186,10 +178,6 @@ class Service {
       const text = payload.toString();
       if (topic === t.state) this.restore(text);
       else if (topic === t.syncNow) this.sync('button');
-      else if (topic === `${cfg.discoveryPrefix}/status` && text === 'online') {
-        this.publishDiscovery();
-        this.publishState();
-      }
     });
     this.client.on('error', (err) => log(`MQTT: ${err.message}`));
 

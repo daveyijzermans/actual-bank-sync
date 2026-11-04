@@ -6,7 +6,7 @@ const os = require('node:os');
 const path = require('node:path');
 
 const { parseTimes, nextRun } = require('../src/schedule');
-const { deviceConfig } = require('../src/discovery');
+const { topics } = require('../src/topics');
 const { Service, readConfig, runChild } = require('../src/main');
 
 const ENV = {
@@ -26,16 +26,12 @@ test('schedule picks the next local time, rolling to tomorrow', () => {
   assert.throws(() => parseTimes('6am'));
 });
 
-test('entity ids follow the device name', () => {
-  const cfg = deviceConfig({ name: 'Actual Bank Sync', prefix: 'p', serverURL: ENV.ACTUAL_SERVER_URL });
-  const ids = Object.values(cfg.components).map((c) => c.default_entity_id).sort();
-  assert.deepStrictEqual(ids, [
-    'binary_sensor.actual_bank_sync_problem',
-    'button.actual_bank_sync_sync_now',
-    'sensor.actual_bank_sync_last_sync',
-    'sensor.actual_bank_sync_next_sync',
-    'sensor.actual_bank_sync_status',
-  ]);
+test('the topics sit under the prefix', () => {
+  assert.deepStrictEqual(topics('p'), {
+    availability: 'p/availability',
+    state: 'p/state',
+    syncNow: 'p/sync_now/press',
+  });
 });
 
 test('config needs a server, credentials, budget and broker', () => {
