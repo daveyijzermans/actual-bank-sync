@@ -4,6 +4,8 @@ services:
     image: actual-bank-sync:latest
     container_name: actual-bank-sync
     restart: unless-stopped
+    labels:
+      - autoheal=true   # restarts it while its healthcheck fails, with an autoheal container beside
     environment:
       TZ: ${TZ:-UTC}
       ACTUAL_SERVER_URL: ${ACTUAL_SERVER_URL}
